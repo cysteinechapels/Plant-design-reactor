@@ -51,8 +51,8 @@ Larray=Vcat./A;
 Flb = F(:,1:10)/453.59237.*MMM*3600; 
 conversion= (sum(F(1,1:10))-sum(F(end,1:10)))/sum(F(1,1:10))*100
 yield=F(end,6)/F(1,1)*100
-
-f = figure('Position',[440 500 461 146]);
+% 
+% f = figure('Position',[440 500 461 146]);
 
 % % create the data
 % d = [1 2 3; 4 5 6; 7 8 9];
