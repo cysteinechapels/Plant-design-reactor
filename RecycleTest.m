@@ -28,11 +28,14 @@ FeedtoRecycle=sum(F0)/sum(Fr)*100;
 vo;
 dP=F(1,11)-F(end,11);
 
+global MM
 
 MMM = MM;
 for n=1:size(F,1)-1
     MMM=vertcat(MMM,MM);
 end
+
+
 
 Larray=Vcat./A;
 
