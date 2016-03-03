@@ -4,10 +4,10 @@ NTube= 5000;
 Volmax = 100;
 ID = 1.3;
 
-Fethyl=600; %flow of ethylene in gmol/s
-FAA = 300; %flow acetic acid in gmol/s
+Fethyl=20000; %flow of ethylene in gmol/s
+FAA = 1500; %flow acetic acid in gmol/s
 Fh20 = 20; %flow of water in gmol/s
-FCH4 = 600; %flow of methane in gmol/s CONTROLS O2 flow
+FCH4 = 20; %flow of methane in gmol/s CONTROLS O2 flow
 
 S=[Fethyl FAA Fh20 FCH4 P T NTube Volmax ID];
 [Fva, F, Fr, F0, Vcat, L, A,vo]=SteadyState(S);

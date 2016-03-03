@@ -9,7 +9,7 @@ function [Fva,F,Fr,F0,Vcat,L,A,vtot0] = SteadyState(I)
 % 1-ethylene 2-acetic acid 3-water 4-ch4 5-P, 6-T, 7-Tube #, 8-Volume cat max, 9-ID
 % 
 safety= 0.8;
-purge=0.8;
+purge=0.3;
 recoveryAA=0.3;
 Rspec=I(5:9); % Rspec = [ P T Tube Volume ID ]
 Po= Rspec(1);%psia
@@ -38,7 +38,11 @@ for i = 1:100
 
     % This is where bugs go to fuck and make more bugs
     % Do you want bugs cause this is how you get bugs
-    FLO2=((20.5-0.02*Po-0.02*(T-459.67)/(5/9)+0.04*I(4)/(Drysum)*100+0.08*Feth/(Drysum)*100+0.01*100*I(1)/(Drysum))-3)*(Drysum)/100;
+    PandT = 20.5-0.02*Po-0.02*(9/5*(T - 273) + 32);
+    Methane = 0.04*I(4)/Drysum*100;
+    Ethane = 0.08*Feth/Drysum*100;
+    Ethylene= 0.01*I(1)/Drysum*100;
+    FLO2=((PandT+Methane+Ethane+Ethylene)-3)*(Drysum)/100;
 
     FO2=FLO2*safety;
 

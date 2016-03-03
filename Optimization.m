@@ -5,10 +5,10 @@ Pmin = 150+14.69;
 Pmax=180+14.69;
 Tmin=(335+459.67)*(5/9);
 Tmax=(350+459.67)*(5/9);
-Tubemin = 1000; %minimum number of tubes
-Tubemax = 100000; %maximum number of tubes
-Volmin = 10; %minimum volume
-Volmax = 100; %maximum volume
+Tubemin = 2000; %minimum number of tubes
+Tubemax = 10000; %maximum number of tubes
+Volmin = 100; %minimum volume
+Volmax = 1000; %maximum volume
 IDmin = 1;
 IDmax = 1.5;
 
@@ -16,8 +16,8 @@ IDmax = 1.5;
 
 % 1-ethylene, 2-acetic acid, 3-water, 4-CH4, 5 - P, 6- T, 7 -
 % Tube #, 8-Volume cat max, 9 - ID
-LB = [100 100 10 100  Pmin Tmin Tubemin Volmin IDmin];
-UB = [10000 10000 10000 50000 Pmax Tmax Tubemax Volmax IDmax];
+LB = [10000 100 10 10000  Pmin Tmin Tubemin Volmin IDmin];
+UB = [1000000 10000 100000 50000 Pmax Tmax Tubemax Volmax IDmax];
 Recovery = 0.8;
 
 % desired vam per hour = yearlytarget * tons/gram / days/year / hours/day /
@@ -33,11 +33,11 @@ MM=[28.0532,31.9988,60.052,18.0153, 16.04, 86.0892,44.0095,30.069,39.948,28.0134
 %and velocity
     function error = goal(x)
         [Fva, F, Fr, F0, Vcat, L, A,vo]=SteadyState(x);
-        error = (product - Fva)^4 + (5-vo)^2;
+        error = (product - Fva)^4 + (1-vo)^2;
     end
 
 
-S = fmincon(@(x) goal(x),[1000 300 2000 500 Pmin Tmin 9000 1000 1.2],[],[],[],[],LB,UB);
+S = fmincon(@(x) goal(x),[10000 5000 100 500 Pmin Tmin 4000 100 1.2],[],[],[],[],LB,UB);
 
  
 %product
@@ -126,7 +126,7 @@ subplot(2,2,3)
     xlabel('Length of Reactor (ft)')
     ylabel('Pressure psia')
 subplot(2,2,4)
-    bar(Flb(1,1:10))
+    bar(Flb(1,1:6))
     title('Components of Feed')
     xlabel('Feed component')
     ylabel('lb/hr')
