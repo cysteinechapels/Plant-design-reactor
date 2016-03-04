@@ -1,28 +1,21 @@
-function Optimization
+function Optimization1Tube
 %   1-ethylene, 2-oxygen, 3-acetic acid, 4-water, 5-CH4, 6-VAM, 7-CO2, 8-Eth,
 %   9-Argon, 10 - N2 11 -Pressure
 Pmin = 150+14.69;
 Pmax=180+14.69;
 Tmin=(335+459.67)*(5/9);
 Tmax=(350+459.67)*(5/9);
-Tubemin = 200; %minimum number of tubes
-Tubemax = 10000; %maximum number of tubes
-Volmin = 100; %minimum volume
-Volmax = 100000; %maximum volume
-
-C2H4min=100;
-C2H4max = 30000;
-AAmin =100;
-AAmax = 30000;
-H2Omin = 0;
-H2Omax = 10000;
-CH4min = 0;
-CH4max = 300000;
-
-% 1-ethylene, 2-acetic acid, 3-water, 4-CH4, 5 - P, 6- T, 7 -
-% Tube #, 8-Volume cat max, 9 - ID
-LB = [C2H4min AAmin H2Omin CH4min  Pmin Tmin Tubemin Volmin];
-UB = [C2H4max AAmax H2Omax CH4max Pmax Tmax Tubemax Volmax];
+Ethylenemin = 0;
+Ethylenemax = 1;
+AAmin=0;
+AAmax = 1;
+H20min=0;
+H20max = 1;
+CH4min=0;
+CH4max=1;
+% 1-ethylene, 2-acetic acid, 3-water, 4-CH4, 5 - P, 6- T
+LB = [Ethylenemin AAmin H20min CH4min  Pmin Tmin];
+UB = [Ethylenemax AAmax H20max CH4max Pmax Tmax];
 
 Recovery = 0.8;
 
@@ -34,21 +27,22 @@ product = 300000*1000000/350/24/3600/453.59/Recovery;
 global MM;   
 MM=[28.0532,31.9988,60.052,18.0153, 16.04, 86.0892,44.0095,30.069,39.948,28.0134];
 
+
 %New optimization function that currently takes into account desired VAM
 %and velocity
     function error = goal(x)
-        [Fva, F, Fr, F0, Vcat, L, A,vo]=SteadyState(x);
-        error = (product - Fva)^4 + (5-vo)^4+(20-L)^2;
+        [Fva, F, Fr, F0, Vcat, L, A,vo]=SteadyState1Tube(x);
+        error = -Fva*100+(20-L)^2;
     end
 
 
-S = fmincon(@(x) goal(x),[10000 5000 100 5000 Pmin Tmin 4000 100],[],[],[],[],LB,UB);
-
+S = fmincon(@(x) goal(x),[0.2 0.13 0 0.08 Pmax Tmax],[],[],[],[],LB,UB);
+S
  
 %product
 % 1-ethylene, 2-acetic acid, 3-water, 4-CH4, 5 - P, 6- T, 7-Tube #, 8-Volume cat max, 9 - ID
 
-[Fva, F, Fr, F0, Vcat, L, A,vo]=SteadyState(S);
+[Fva, F, Fr, F0, Vcat, L, A,vo]=SteadyState1Tube(S);
 
 %%%==============================================================
 % Remainder takes outputs of SteadyState using inputs determined by fmincon
@@ -67,11 +61,9 @@ end
 % Convert gmol/s flow to lb/s flow
 Flb = F(:,1:10)/453.59237.*MMM*3600;
 
-% Find %error in VAM production
-error= (Fva-product)/product*100;
-
 % flow of VAM in lb/s
-Fva; 
+Fva 
+
 
 % percent CH4 of inflow to reactor
 percentCH4=Flb(1,5)/sum(Flb(1,:))*100;
@@ -84,11 +76,11 @@ L; %end length of reactor
 O2fin = Flb(end,2); %final O2 amount
 FeedtoRecycle=sum(F0)/sum(Fr)*100;
 vo;
-dP=F(1,11)-F(end,11);
+dP=F(1,11)-F(end,11)
 dPcalc = 0.25*vo^2*L;
-Ntubes=S(7);
+Ntubes=product/Fva;
 
-Flbplot= [Flb(1,1:4) Flb(1,8:10)];
+
 
 Larray=Vcat./A;
 
@@ -99,10 +91,10 @@ yield=F(end,6)/F(1,1)*100;
 f = figure('Position',[440 500 800 120]);
 
 % create the data
-d = [Fva error dP dPcalc percentCH4 percentinerts FeedtoRecycle VolumeCatalyst L vo Ntubes conversion yield];
+d = [Fva dP dPcalc percentCH4 percentinerts FeedtoRecycle VolumeCatalyst vo Ntubes conversion yield];
 
 % Create the column and row names in cell arrays 
-cnames = {'VAM outflow','Error','dP','dPcacl','%CH4','%inerts','%Feed/Recycle', 'VolCat', 'Length','velocity','#tubes', 'conversion', 'yield'};
+cnames = {'VAM outflow','dP','dPcacl','%CH4','%inerts','%Feed/Recycle', 'VolCat', 'velocity','#tubes', 'conversion', 'yield'};
 
 % Create the uitable
 t = uitable(f,'Data',d,...
@@ -131,7 +123,7 @@ subplot(2,2,3)
     xlabel('Length of Reactor (ft)')
     ylabel('Pressure psia')
 subplot(2,2,4)
-    bar(Flbplot)
+    bar(Flb(1,1:6))
     title('Components of Feed')
     xlabel('Feed component')
     ylabel('lb/hr')

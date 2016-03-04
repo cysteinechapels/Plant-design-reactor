@@ -10,8 +10,8 @@ function [Fva,F,Fr,F0,Vcat,L,A,vtot0] = SteadyState(I)
 % 
 safety= 0.8;
 purge=0.3;
-recoveryAA=0.3;
-Rspec=I(5:9); % Rspec = [ P T Tube Volume ID ]
+recoveryAA=0.5;
+Rspec = I(5:8); % Rspec = [ P T Tube Volume ID ]
 Po= Rspec(1);%psia
 T= Rspec(2); %Kelvin
 
@@ -19,7 +19,7 @@ T= Rspec(2); %Kelvin
 density=[0.641861,0.717219,2.1532,0.436983,0.360817,2.50445,1.01649,0.692685,0.895527,0.625938];
 
 global MM;
-%MM=[28.0532,31.9988,60.052,18.0153, 16.04, 86.0892,44.0095,30.069,39.948,28.0134];
+MM=[28.0532,31.9988,60.052,18.0153, 16.04, 86.0892,44.0095,30.069,39.948,28.0134];
 
 
 %Calculation of inerts using volume %
@@ -32,7 +32,7 @@ FO2 = 0;
 FAr = 0;
 FN2 = 0;
 
-%Iteration for getting Oxygen flow properly
+% Iteration for getting Oxygen flow properly
 for i = 1:100
     Drysum = I(1)+I(4)+Feth+FO2+FAr+FN2;
 
@@ -45,9 +45,9 @@ for i = 1:100
     FLO2=((PandT+Methane+Ethane+Ethylene)-3)*(Drysum)/100;
 
     FO2=FLO2*safety;
-
+    FO2vol=FO2*MM(2)/453.59237/density(2);
     Oxyinerts = [1 -1 -1; -0.0011 1 0; -0.0005 0 1];
-    Totalinerts = [FO2;0;0];
+    Totalinerts = [FO2vol;0;0];
     ArandN2 = Oxyinerts\Totalinerts;
     FAr = ArandN2(2)*density(9)*453.59237/MM(9);
     FN2 = ArandN2(3)*density(10)*453.59237/MM(10);

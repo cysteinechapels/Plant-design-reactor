@@ -1,17 +1,33 @@
-function [selectivity, O2perc,i]=Flammability(I)
-Po=180;
-T=446;
-safety=0.8;
+function [Fva,F,Fr,F0,Vcat,L,A,vtot0] = SteadyState1Tube(I)
+% I = [ ethylene, acetic, water, ch4, P, T, Tube, Volume, ID]
 
+% Species order
+% 1-ethylene, 2-oxygen, 3-acetic acid, 4-water, 5-CH4, 6-VAM, 7-CO2, 8-Eth,
+%   9-Argon, 10 - N2 11 -Pressure
+
+%Input order
+% 1-ethylene 2-acetic acid 3-water 4-ch4 5-P, 6-T, 7-Tube #, 8-Volume cat max, 9-ID
+% 
+safety= 0.8;
+purge=0.3;
+recoveryAA=0.5;
+Rspec = [I(5) I(6)]; % Rspec = [ P T Tube Volume ID ]
+Po= Rspec(1);%psia
+T= Rspec(2); %Kelvin
+
+%Densities at 349 F and 180 psig
+density=[0.641861,0.717219,2.1532,0.436983,0.360817,2.50445,1.01649,0.692685,0.895527,0.625938];
+
+global MM;
 MM=[28.0532,31.9988,60.052,18.0153, 16.04, 86.0892,44.0095,30.069,39.948,28.0134];
-density=[0.650502,0.725865,1.73532,0.435758,0.3637,2.48941,1.01799,0.702875,0.905922,0.633822];
 
-%Calculation of inerts using volume
+
+%Calculation of inerts using volume %
 FvolE = I(1).*MM(1)/453.59237./density(1);
 FvolCH4=I(4).*MM(5)/453.59237./density(5);
 
 %WTF
-Feth = (FvolE*245/1000000+FvolCH4*800/1000000)*density(8)*453.59237/MM(8)
+Feth = (FvolE*245/1000000+FvolCH4*800/1000000)*density(8)*453.59237/MM(8); 
 FO2 = 0;
 % FO2 = I(4);
 FAr = 0;
@@ -59,20 +75,35 @@ for i = 1:100
     FAr = ArandN2(2)*density(9)*453.59237/MM(9);
     FN2 = ArandN2(3)*density(10)*453.59237/MM(10);
     Drynew = I(1)+I(4)+Feth+FO2+FAr+FN2;
-    Check = abs(Drysum-Drynew)
+    Check = abs(Drysum-Drynew);
 
     if Check <= 0.001
         break
     end
 end
-i;
+
 F0=[I(1) FO2 I(2) I(3) I(4) 0 0 Feth FAr FN2];
-
-p=F0./sum(F0)*Po;
-rx= 1409*exp(-3674/T)*p(2)*p(1)*p(3)*(1+1.17*p(4))/((1+0.583*p(2)*(1+1.7*p(4)))*(1+6.8*p(3)))/3600;
-ry=9625*exp(-4250/T)*p(2)*(1+0.68*p(4))/(1+0.76*p(2)*(1+0.68*p(4)))/3600;
+Fr=zeros(1,10);
 
 
-O2perc = FO2/sum(F0);
+for n=1:100
+    F=F0+Fr;
+    New=Solver1Tube(F,Rspec);
+    Fr=New(end,1:end-1);
+    Fr([4 6])=0; %taking out heavy ends
+    Fr(3)=Fr(3)*recoveryAA; %recycled AA from azeo column
+    Fr(7)=Fr(7)*0.01; %CO2 treatment
+    Fr=Fr*(1-purge); %purge stream
+    Fnew=Fr+F0;
+    sum(F-Fnew);
+    if abs(sum(F-Fnew))<10
+        break
+    end
+end
 
-selectivity = rx/ry;
+%F0;
+%Fr;
+[Fend,F,Fva, Vcat,L,A,vtot0]=Solver1Tube(Fnew,Rspec);
+
+end
+
