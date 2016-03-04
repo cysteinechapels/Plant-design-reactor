@@ -15,22 +15,25 @@ Rspec = I(5:8); % Rspec = [ P T Tube Volume ID ]
 Po= Rspec(1);%psia
 T= Rspec(2); %Kelvin
 
-%Densities at 349 F and 180 psig
-density=[0.641861,0.717219,2.1532,0.436983,0.360817,2.50445,1.01649,0.692685,0.895527,0.625938];
-
-global MM;
 MM=[28.0532,31.9988,60.052,18.0153, 16.04, 86.0892,44.0095,30.069,39.948,28.0134];
+%Densities at respective feed T and P in lb/ft^3 (T=80F and P-400psig for
+%ethylene, ethane, oxygen, argon, N2; methane at 80F and 135psig; AAc at
+%80F 100psig; 0 signifies not fed to process
+feeddensity=[2.21607,2.34002,2.4017,0,0.422338,0,0,2.18847,2.29067,2.02514];
+%separate density for the ethane that comes in with methane
+ethinmethdensity=0.842457;
 
-
-%Calculation of inerts using volume %
-FvolE = I(1).*MM(1)/453.59237./density(1);
-FvolCH4=I(4).*MM(5)/453.59237./density(5);
+%Calculation of inerts using volume
+FvolE = I(1).*MM(1)/453.59237./feeddensity(1);
+FvolCH4=I(4).*MM(5)/453.59237./feeddensity(5);
 
 %WTF
-Feth = (FvolE*245/1000000+FvolCH4*800/1000000)*density(8)*453.59237/MM(8); 
+Feth = (FvolE*245/1000000*feeddensity(8)+FvolCH4*800/1000000*ethinmethdensity)*453.59237/MM(8)
 FO2 = 0;
+% FO2 = I(4);
 FAr = 0;
 FN2 = 0;
+
 
 % Iteration for getting Oxygen flow properly
 for i = 1:100
@@ -49,8 +52,8 @@ for i = 1:100
     Oxyinerts = [1 -1 -1; -0.0011 1 0; -0.0005 0 1];
     Totalinerts = [FO2vol;0;0];
     ArandN2 = Oxyinerts\Totalinerts;
-    FAr = ArandN2(2)*density(9)*453.59237/MM(9);
-    FN2 = ArandN2(3)*density(10)*453.59237/MM(10);
+    FAr = ArandN2(2)*feeddensity(9)*453.59237/MM(9);
+    FN2 = ArandN2(3)*feeddensity(10)*453.59237/MM(10);
     Drynew = I(1)+I(4)+Feth+FO2+FAr+FN2;
     Check = abs(Drysum-Drynew);
 
