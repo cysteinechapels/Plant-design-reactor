@@ -2,12 +2,12 @@ function [Fend,F,Fva,Vcat,L,A,vtot0] = Solver (F0,Rspec)
 %   1-ethylene, 2-oxygen, 3-acetic acid, 4-water, 5-CH4, 6-VAM, 7-CO2, 8-Eth,
 %   9-Argon, 10 - N2 11 -Pressure
 
-Volcat=[0 Rspec(4)]; %volume of catalyst, liters
 T= Rspec(2); %Kelvin
 D= 1.4/12; %feet
 A=D^2/4*pi()*Rspec(3); %total cross-sectional area of reactor
 Po= Rspec(1);%psia
-
+Volmax = A*Rspec(4);
+Volcat=[0 Volmax]; %volume of catalyst, liters
 
 %Density at 180psig nd 340.1F]
 density=[0.650502,0.725865,1.73532,0.435758,0.3637,2.48941,1.01799,0.702875,0.905922,0.633822];

@@ -7,8 +7,8 @@ Tmin=(335+459.67)*(5/9);
 Tmax=(350+459.67)*(5/9);
 Tubemin = 2000; %minimum number of tubes
 Tubemax = 40000; %maximum number of tubes
-Volmin = 100; %minimum volume
-Volmax = 100000; %maximum volume
+Lengthmin = 0;
+Lengthmax = 130;
 
 C2H4min=1;
 C2H4max = 30000;
@@ -21,8 +21,8 @@ CH4max = 3000;
 
 % 1-ethylene, 2-acetic acid, 3-water, 4-CH4, 5 - P, 6- T, 7 -
 % Tube #, 8-Volume cat max, 9 - ID
-LB = [C2H4min AAmin H2Omin CH4min  Pmin Tmin Tubemin Volmin];
-UB = [C2H4max AAmax H2Omax CH4max Pmax Tmax Tubemax Volmax];
+LB = [C2H4min AAmin H2Omin CH4min  Pmin Tmin Tubemin Lengthmin];
+UB = [C2H4max AAmax H2Omax CH4max Pmax Tmax Tubemax Lengthmax];
 
 Recovery = 0.8;
 
@@ -42,7 +42,7 @@ MM=[28.0532,31.9988,60.052,18.0153, 16.04, 86.0892,44.0095,30.069,39.948,28.0134
     end
 
 
-S = fmincon(@(x) goal(x),[1 1 0 100 Pmin Tmin 4000 100],[],[],[],[],LB,UB);
+S = fmincon(@(x) goal(x),[1 1 0 100 Pmin Tmin 4000 20],[],[],[],[],LB,UB);
 
  
 %product
