@@ -3,6 +3,7 @@ function [selectivity, O2perc,i]=Flammability(I)
 %   9-Argon, 10 - N2 11 -PressurePo=180;
 T=446;
 safety=0.8;
+Po=180;
 
 MM=[28.0532,31.9988,60.052,18.0153, 16.04, 86.0892,44.0095,30.069,39.948,28.0134];
 %Densities at respective feed T and P in lb/ft^3 (T=80F and P-400psig for
@@ -42,7 +43,7 @@ for i = 1:100
     FAr = ArandN2(2)*feeddensity(9)*453.59237/MM(9);
     FN2 = ArandN2(3)*feeddensity(10)*453.59237/MM(10);
     Drynew = I(1)+I(4)+Feth+FO2+FAr+FN2;
-    Check = abs(Drysum-Drynew)
+    Check = abs(Drysum-Drynew);
 
     if Check <= 0.001
         break
@@ -56,6 +57,6 @@ rx= 1409*exp(-3674/T)*p(2)*p(1)*p(3)*(1+1.17*p(4))/((1+0.583*p(2)*(1+1.7*p(4)))*
 ry=9625*exp(-4250/T)*p(2)*(1+0.68*p(4))/(1+0.76*p(2)*(1+0.68*p(4)))/3600;
 
 
-O2perc = FO2/sum(F0);
+O2perc = FO2/sum(F0)
 
 selectivity = rx/ry;

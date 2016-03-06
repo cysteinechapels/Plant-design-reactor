@@ -1,4 +1,4 @@
-function [Fva,F,Fr,F0,Vcat,L,A,vtot0] = SteadyState(I)
+function [Fva,F,Fr,F0,Vcat,L,A,vtot0, n] = SteadyState(I)
 % I = [ ethylene, acetic, water, ch4, P, T, Tube, Volume, ID]
 
 % Species order
@@ -9,7 +9,7 @@ function [Fva,F,Fr,F0,Vcat,L,A,vtot0] = SteadyState(I)
 % 1-ethylene 2-acetic acid 3-water 4-ch4 5-P, 6-T, 7-Tube #, 8-Volume cat max, 9-ID
 % 
 safety= 0.8;
-purge=0.3;
+purge=0.8;
 recoveryAA=0.5;
 Rspec = I(5:8); % Rspec = [ P T Tube Volume ID ]
 Po= Rspec(1);%psia
@@ -28,7 +28,7 @@ FvolE = I(1).*MM(1)/453.59237./feeddensity(1);
 FvolCH4=I(4).*MM(5)/453.59237./feeddensity(5);
 
 %WTF
-Feth = (FvolE*245/1000000*feeddensity(8)+FvolCH4*800/1000000*ethinmethdensity)*453.59237/MM(8)
+Feth = (FvolE*245/1000000*feeddensity(8)+FvolCH4*800/1000000*ethinmethdensity)*453.59237/MM(8);
 FO2 = 0;
 % FO2 = I(4);
 FAr = 0;
@@ -48,7 +48,7 @@ for i = 1:100
     FLO2=((PandT+Methane+Ethane+Ethylene)-3)*(Drysum)/100;
 
     FO2=FLO2*safety;
-    FO2vol=FO2*MM(2)/453.59237/density(2);
+    FO2vol=FO2*MM(2)/453.59237/feeddensity(2);
     Oxyinerts = [1 -1 -1; -0.0011 1 0; -0.0005 0 1];
     Totalinerts = [FO2vol;0;0];
     ArandN2 = Oxyinerts\Totalinerts;

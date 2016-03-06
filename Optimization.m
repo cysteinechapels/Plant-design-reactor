@@ -5,19 +5,19 @@ Pmin = 150+14.69;
 Pmax=180+14.69;
 Tmin=(335+459.67)*(5/9);
 Tmax=(350+459.67)*(5/9);
-Tubemin = 200; %minimum number of tubes
-Tubemax = 10000; %maximum number of tubes
+Tubemin = 2000; %minimum number of tubes
+Tubemax = 40000; %maximum number of tubes
 Volmin = 100; %minimum volume
 Volmax = 100000; %maximum volume
 
-C2H4min=100;
+C2H4min=1;
 C2H4max = 30000;
-AAmin =100;
+AAmin =1;
 AAmax = 30000;
 H2Omin = 0;
-H2Omax = 10000;
-CH4min = 0;
-CH4max = 300000;
+H2Omax = 0;
+CH4min = 100;
+CH4max = 3000;
 
 % 1-ethylene, 2-acetic acid, 3-water, 4-CH4, 5 - P, 6- T, 7 -
 % Tube #, 8-Volume cat max, 9 - ID
@@ -38,17 +38,17 @@ MM=[28.0532,31.9988,60.052,18.0153, 16.04, 86.0892,44.0095,30.069,39.948,28.0134
 %and velocity
     function error = goal(x)
         [Fva, F, Fr, F0, Vcat, L, A,vo]=SteadyState(x);
-        error = (product - Fva)^4 + (5-vo)^4+(20-L)^2;
+        error = (product - Fva)^4;
     end
 
 
-S = fmincon(@(x) goal(x),[10000 5000 100 5000 Pmin Tmin 4000 100],[],[],[],[],LB,UB);
+S = fmincon(@(x) goal(x),[1 1 0 100 Pmin Tmin 4000 100],[],[],[],[],LB,UB);
 
  
 %product
 % 1-ethylene, 2-acetic acid, 3-water, 4-CH4, 5 - P, 6- T, 7-Tube #, 8-Volume cat max, 9 - ID
 
-[Fva, F, Fr, F0, Vcat, L, A,vo]=SteadyState(S);
+[Fva, F, Fr, F0, Vcat, L, A,vo, n]=SteadyState(S);
 
 %%%==============================================================
 % Remainder takes outputs of SteadyState using inputs determined by fmincon
@@ -64,15 +64,17 @@ for n=1:size(F,1)
     MMM(n,:)=MM;
 end
 
-% Convert gmol/s flow to lb/s flow
+% Convert gmol/s flow to lb/hr flow
 Flb = F(:,1:10)/453.59237.*MMM*3600;
-
+Flb(end,1:10);
+F(end,1:10)
 % Find %error in VAM production
 error= (Fva-product)/product*100;
 
 % flow of VAM in lb/s
 Fva; 
 
+n
 % percent CH4 of inflow to reactor
 percentCH4=Flb(1,5)/sum(Flb(1,:))*100;
 

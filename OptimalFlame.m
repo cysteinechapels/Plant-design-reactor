@@ -8,7 +8,7 @@ Initial = [0.5 0.2 0.1 0.2]
 
 function error = goal(x)
         [selectivity,O2perc,i]=Flammability(x);
-        error = -selectivity + -O2perc;
+        error = -selectivity;
     end
 
 
