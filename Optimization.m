@@ -5,19 +5,19 @@ Pmin = 150+14.69;
 Pmax=180+14.69;
 Tmin=(335+459.67)*(5/9);
 Tmax=(350+459.67)*(5/9);
-Tubemin = 2000; %minimum number of tubes
-Tubemax = 40000; %maximum number of tubes
+Tubemin = 1000; %minimum number of tubes
+Tubemax = 2000; %maximum number of tubes
 Lengthmin = 0;
-Lengthmax = 130;
+Lengthmax = 40;
 
 C2H4min=1;
-C2H4max = 30000;
-AAmin =1;
-AAmax = 30000;
+C2H4max = 3000;
+AAmin =10;
+AAmax = 300;
 H2Omin = 0;
 H2Omax = 0;
-CH4min = 100;
-CH4max = 3000;
+CH4min = 1;
+CH4max = 30;
 
 % 1-ethylene, 2-acetic acid, 3-water, 4-CH4, 5 - P, 6- T, 7 -
 % Tube #, 8-Volume cat max, 9 - ID
@@ -28,7 +28,7 @@ Recovery = 0.8;
 
 % desired vam per hour = yearlytarget * tons/gram / days/year / hours/day /
 % seconds/hour / grams/pound / fudge factor
-product = 300000*1000000/350/24/3600/453.59/Recovery;
+product = 300000*1000000/350/24/3600/453.59/Recovery
 
 % density=[0.650502,0.725865,1.73532,0.435758,0.3637,2.48941,1.01799,0.702875,0.905922,0.633822];
 global MM;   
@@ -43,8 +43,10 @@ MM=[28.0532,31.9988,60.052,18.0153, 16.04, 86.0892,44.0095,30.069,39.948,28.0134
 
 
 S = fmincon(@(x) goal(x),[1 1 0 100 Pmin Tmin 4000 20],[],[],[],[],LB,UB);
+% S=fmincon(@(x) goal(x),0.5,[],[],[],[],0,1)
+% % 
+%  S = [3900 240 0 140 192.26 449 39000 120];
 
- 
 %product
 % 1-ethylene, 2-acetic acid, 3-water, 4-CH4, 5 - P, 6- T, 7-Tube #, 8-Volume cat max, 9 - ID
 
@@ -66,7 +68,7 @@ end
 
 % Convert gmol/s flow to lb/hr flow
 Flb = F(:,1:10)/453.59237.*MMM*3600;
-Flb(end,1:10);
+Flb(end,1:10)
 F(end,1:10)
 % Find %error in VAM production
 error= (Fva-product)/product*100;
@@ -74,12 +76,13 @@ error= (Fva-product)/product*100;
 % flow of VAM in lb/s
 Fva; 
 
-n
+
 % percent CH4 of inflow to reactor
 percentCH4=Flb(1,5)/sum(Flb(1,:))*100;
 
 % percent of inerts in reactor output
 percentinerts=sum(Flb(end,8:10))/sum(Flb(end,:))*100;
+
 
 VolumeCatalyst=Vcat(end); %total volume of catalyst
 L; %end length of reactor
@@ -92,7 +95,7 @@ Ntubes=S(7);
 
 Flbplot= [Flb(1,1:4) Flb(1,8:10)];
 
-Larray=Vcat./A;
+Larray=Vcat./28.31/A;
 
 
 conversion= (sum(F(1,1:10))-sum(F(end,1:10)))/sum(F(1,1:10))*100;

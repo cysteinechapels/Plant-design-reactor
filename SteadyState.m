@@ -8,9 +8,10 @@ function [Fva,F,Fr,F0,Vcat,L,A,vtot0, n] = SteadyState(I)
 %Input order
 % 1-ethylene 2-acetic acid 3-water 4-ch4 5-P, 6-T, 7-Tube #, 8-Volume cat max, 9-ID
 % 
+
 safety= 0.8;
-purge=0.8;
-recoveryAA=0.5;
+purge=0.5;
+recoveryAA=1;
 Rspec = I(5:8); % Rspec = [ P T Tube Volume ID ]
 Po= Rspec(1);%psia
 T= Rspec(2); %Kelvin
@@ -72,7 +73,7 @@ for n=1:100
     Fr=New(end,1:end-1);
     Fr([4 6])=0; %taking out heavy ends
     Fr(3)=Fr(3)*recoveryAA; %recycled AA from azeo column
-    Fr(7)=Fr(7)*0.01; %CO2 treatment
+    Fr(7)=Fr(7)/2+Fr(7)*0.01/2; %CO2 treatment
     Fr=Fr*(1-purge); %purge stream
     Fnew=Fr+F0;
     sum(F-Fnew);
