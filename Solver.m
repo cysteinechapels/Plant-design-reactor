@@ -3,7 +3,7 @@ function [Fend,F,Fva,Vcat,L,A,vtot0] = Solver (F0,Rspec)
 %   9-Argon, 10 - N2 11 -Pressure
 
 T= Rspec(2); %Kelvin
-D= 1.5/12; %feet
+D= 1.4/12; %feet
 A=D^2/4*pi()*Rspec(3); %total cross-sectional area of reactor
 Po= Rspec(1);%psia
 Volmax = A*Rspec(4)*28.316847;
@@ -37,7 +37,7 @@ opts=odeset('Events',@events);
     end
 Vcat(end);
 L=Vcat(end)/28.316847/A;
-Fva=F(end,6);
-%Fva = F(end,6)/453.59237.*MM(6); %mass flow of Va in lb
+%Fva=F(end,6);
+Fva = F(end,6)/453.59237.*MM(6); %mass flow of Va in lb
 Fend=F(end,:);
 end

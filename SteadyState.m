@@ -1,4 +1,4 @@
-function [Fva,F,Fr,F0,Vcat,L,A,vtot0, n] = SteadyState(I)
+function [Fva,F,Fr,F0,Vcat,L,A,vtot0,n] = SteadyState(I)
 % I = [ ethylene, acetic, water, ch4, P, T, Tube, Volume, ID]
 
 % Species order
@@ -7,11 +7,11 @@ function [Fva,F,Fr,F0,Vcat,L,A,vtot0, n] = SteadyState(I)
 
 %Input order
 % 1-ethylene 2-acetic acid 3-water 4-ch4 5-P, 6-T, 7-Tube #, 8-Volume cat max, 9-ID
-% 
 
 safety= 0.8;
-purge=0.5;
-recoveryAA=1;
+waterfactor = 0.2;
+purge=0.2;
+recoveryAA=0.95;
 Rspec = I(5:8); % Rspec = [ P T Tube Volume ID ]
 Po= Rspec(1);%psia
 T= Rspec(2); %Kelvin
@@ -62,27 +62,45 @@ for i = 1:100
         break
     end
 end
-
+i;
 F0=[I(1) FO2 I(2) I(3) I(4) 0 0 Feth FAr FN2];
+F0star=[I(1) FO2 I(2) I(3) I(4) 0 0 Feth FAr FN2];
 Fr=zeros(1,10);
 
 
 for n=1:100
+    Foriginal = F0star;
     F=F0+Fr;
     New=Solver(F,Rspec);
     Fr=New(end,1:end-1);
-    Fr([4 6])=0; %taking out heavy ends
+    SumF = sum(abs(Fr));
+    Fr(1)=Fr(1)*(1-purge);%ethylene purge
+    Fr(2)=Fr(2)*(1-purge);%Oxy purge
+    Fr(5)=Fr(5)*(1-purge);%Methane purge
+    Fr(8)=Fr(8)*(1-purge);%ethane purge
+    Fr(9)=Fr(9)*(1-purge);%argon purge
+    Fr(10)=Fr(10)*(1-purge);%nitrogen purge
+    Fr(4)=Fr(4)*waterfactor; %water recovery
+    Fr(6)=SumF*0.0001/0.9999*(1-purge);%100ppm VAM in recycle
     Fr(3)=Fr(3)*recoveryAA; %recycled AA from azeo column
-    Fr(7)=Fr(7)/2+Fr(7)*0.01/2; %CO2 treatment
-    Fr=Fr*(1-purge); %purge stream
+    Fr(7)=(Fr(7)/2+Fr(7)*0.01/2)*(1-purge); %CO2 treatment
     Fnew=Fr+F0;
-    sum(F-Fnew);
-    if abs(sum(F-Fnew))<10
+    TF = abs(F);
+    TFnew = abs(Fnew);
+    Test = sum(abs(TF-TFnew));
+    if Test<1
         break
     end
+    F0 = Foriginal;
+    F0 = F0-Fr;
+    F0(4)=0;
+    F0(6)=0;
+    F0(7)=0;
+    F0;
 end
-
-%F0;
+n;
+F0;
+New;
 %Fr;
 [Fend,F,Fva, Vcat,L,A,vtot0]=Solver(Fnew,Rspec);
 
