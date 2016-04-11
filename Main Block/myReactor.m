@@ -7,10 +7,8 @@ function [ dFdV ] = myReactor( V,F,A,T,Po,vo,Fto)
 
 %L=V/1000*(3.28^3)/A
 Ft=sum(F)-F(11);
+%determine instantaneous velocity
 vtube=vo*(Ft/Fto)*(Po/F(11));
-%vtube = vo;
-
-% dp=-0.25*vtube^2*L;
 
 p=zeros(1,10); %partial pressures, indexed as above
 for n=1:10
@@ -19,7 +17,6 @@ end
 p;
 r=zeros(1,11); %reaction rates, indexed as above
 
-% This is how satan gets ahold of men's hearts
 rx= 1409*exp(-3674/T)*(p(2)*p(1)*p(3)*(1+1.7*p(4)))/((1+0.583*p(2)*(1+1.7*p(4)))*(1+6.8*p(3)))/3600;
 ry=9625*exp(-4250/T)*p(2)*(1+0.68*p(4))/(1+0.76*p(2)*(1+0.68*p(4)))/3600;
 

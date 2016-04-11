@@ -1,4 +1,8 @@
-function [Fva,F,Fr,F0,Vcat,L,A,vtot0,n] = SteadyState(I)
+function [Fva,F,Fr,F0,Vcat,L,A,vtot0, n] = SteadyState(I)
+%This function determines the steady state flows through the reactor using
+%a for loop. The purification section is approximated and the purge is a
+%specified value. 
+
 % I = [ ethylene, acetic, water, ch4, P, T, Tube, Volume, ID]
 
 % Species order
@@ -8,10 +12,16 @@ function [Fva,F,Fr,F0,Vcat,L,A,vtot0,n] = SteadyState(I)
 %Input order
 % 1-ethylene 2-acetic acid 3-water 4-ch4 5-P, 6-T, 7-Tube #, 8-Volume cat max, 9-ID
 
+
+%safety factor for flammability calculations
 safety= 0.8;
-waterfactor = 0.2;
-purge=0.2;
-recoveryAA=0.95;
+%Approximated water recovery from the purification section
+waterfactor = 0.14;
+%Selected purge percent
+purge=0.01;
+%Approximated acetic acid recovery from the purification section
+recoveryAA=0.99;
+
 Rspec = I(5:8); % Rspec = [ P T Tube Volume ID ]
 Po= Rspec(1);%psia
 T= Rspec(2); %Kelvin
@@ -36,12 +46,11 @@ FAr = 0;
 FN2 = 0;
 
 
-% Iteration for getting Oxygen flow properly
+% % Iterative calculation used determine safe (FLO2) and operating (FO2)
+% oxygen concentration based on input values for ethylene and methane
 for i = 1:100
     Drysum = I(1)+I(4)+Feth+FO2+FAr+FN2;
 
-    % This is where bugs go to fuck and make more bugs
-    % Do you want bugs cause this is how you get bugs
     PandT = 20.5-0.02*Po-0.02*(9/5*(T - 273) + 32);
     Methane = 0.04*I(4)/Drysum*100;
     Ethane = 0.08*Feth/Drysum*100;
@@ -67,8 +76,11 @@ F0=[I(1) FO2 I(2) I(3) I(4) 0 0 Feth FAr FN2];
 F0star=[I(1) FO2 I(2) I(3) I(4) 0 0 Feth FAr FN2];
 Fr=zeros(1,10);
 
-
-for n=1:100
+%Outflows from a single pass through the reactor are modified to simulate
+%the purification section, then sent back to reactor along with fresh feed.
+%This is repeated until there is no change between the previous iteration
+%outfow and the current outflow, signifying steady state
+for n=1:500
     Foriginal = F0star;
     F=F0+Fr;
     New=Solver(F,Rspec);
@@ -85,23 +97,30 @@ for n=1:100
     Fr(3)=Fr(3)*recoveryAA; %recycled AA from azeo column
     Fr(7)=(Fr(7)/2+Fr(7)*0.01/2)*(1-purge); %CO2 treatment
     Fnew=Fr+F0;
-    TF = abs(F);
-    TFnew = abs(Fnew);
-    Test = sum(abs(TF-TFnew));
-    if Test<1
-        break
-    end
+%     TF = abs(F);
+%     TFnew = abs(Fnew);
+%     Test = sum(abs(TF-TFnew));
+%      if Test<1
+%          break
+%      end
+    Tinert = F(8)+F(9)+F(10);
+    Tinertnew = Fnew(8)+Fnew(9)+Fnew(10);
+    Test = (sum(abs(Tinert-Tinertnew)))^2;
+        if ((n>1) && (Test<0.01))
+            break
+        end
     F0 = Foriginal;
     F0 = F0-Fr;
+    F0(8)=Feth;  
+    F0(9)=FAr;  
+    F0(10)=FN2;  
     F0(4)=0;
     F0(6)=0;
     F0(7)=0;
     F0;
+    Fr(8);
 end
 n;
-F0;
-New;
-%Fr;
 [Fend,F,Fva, Vcat,L,A,vtot0]=Solver(Fnew,Rspec);
 
 end
