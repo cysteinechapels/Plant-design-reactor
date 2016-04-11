@@ -11,34 +11,27 @@ Pmax=180+14.69; %maximum pressure
 Tmin=(335+459.67)*(5/9); %minimum temperature
 Tmax=(350+459.67)*(5/9); %maximum temperature
 Tubemin = 1000; %minimum number of tubes
-Tubemax = 6000; %maximum number of tubes
+Tubemax = 7000; %maximum number of tubes
 Lengthmin = 0; %minimum length
 Lengthmax = 20; %maximum length
 Purgemin = 0;
 Purgemax = 0.05;
 
 %start up fresh feed ranges, in mol/s
-C2H4min=1;
+C2H4min=800;
 C2H4max = 2500;
-AAmin =1;
-AAmax =5000;
+AAmin =100;
+AAmax =2000;
 H2Omin = 0;
 H2Omax = 0;
-CH4min = 1;
+CH4min = 10;
 CH4max = 800;
 
 % 1-ethylene, 2-acetic acid, 3-water, 4-CH4, 5 - P, 6- T, 7 -
 % Tube #, 8-Volume cat max, 9 - ID
-LBa = zeros(2,9)
-LBa(1,:) =  [C2H4min AAmin H2Omin CH4min Pmin Tmin Tubemin Lengthmin Purgemin];
-LBa(2,:) =  [C2H4min 100 H2Omin CH4min Pmin Tmin Tubemin Lengthmin Purgemin];
 
-UBa = zeros(2,9)
-UBa(1,:) = [C2H4max 100 H2Omax CH4max Pmax Tmax Tubemax Lengthmax Purgemax];
-UBa(2,:) = [C2H4max 200 H2Omax CH4max Pmax Tmax Tubemax Lengthmax Purgemax];
-
-%LB = [C2H4min AAmin H2Omin CH4min Pmin Tmin Tubemin Lengthmin Purgemin];
-%UB = [C2H4max AAmax H2Omax CH4max Pmax Tmax Tubemax Lengthmax Purgemax];
+LB = [C2H4min AAmin H2Omin CH4min Pmin Tmin Tubemin Lengthmin Purgemin];
+UB = [C2H4max AAmax H2Omax CH4max Pmax Tmax Tubemax Lengthmax Purgemax];
 
 Recovery = 0.95; %estimated recovery of vinyl acetate
 O2conversion = 90;
@@ -91,16 +84,9 @@ cost = 0;
         error = spec+cost+O2check+AAcheck;
     end
 
-parpool
 
-ff = @goal;
-results = zeros(1,2)
-parfor i=1:2
-    results(i) = fmincon(ff,[1200 200 0 50 Pmin Tmin 4000 20 0.005],[],[],[],[],LBa(i,:),UBa(i,:));
-    %S = fmincon(@(x) goal(x),[1200 200 0 50 Pmin Tmin 4000 20 0.005],[],[],[],[],LB,UB);
-end
+S = fmincon(@(x) goal(x),[1200 200 0 50 Pmin Tmin 4000 20 0.005],[],[],[],[],LB,UB);
 
-results
 S
 S(9)
 %product
