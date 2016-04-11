@@ -75,160 +75,170 @@ function error = GoalFunction(x)
         error = spec+cost+O2check+AAcheck;
 end
 
-maxthreads = 2;
-parpool(maxthreads)
+maxthreads = 20;
 
 results = zeros(maxthreads, 9);
 handle = @GoalFunction;
 
-AAmin = 0;
-AAmax = 200;
-parfor i=1:maxthreads
-    aamin = AAmin + i * AAmax / maxthreads
-    aamax = AAmin + (i + 1) * AAmax / maxthreads
+AAmin = 100;
+AAmax = 500;
+step = (AAmax-AAmin) / 100
+parpool(maxthreads)
+parfor i=1:1
+    aamin = AAmin + (i-1) * step
+    aamax = AAmin + (i) * step
     LB = [C2H4min aamin H2Omin CH4min Pmin Tmin Tubemin Lengthmin Purgemin];
     UB = [C2H4max aamax H2Omax CH4max Pmax Tmax Tubemax Lengthmax Purgemax];
     results(i,:) = fmincon(handle,[1200 200 0 50 Pmin Tmin 4000 20 0.005],[],[],[],[],LB,UB);
+    output = sprintf('range %d is finished %d-%d' , i , aamin, aamax)
+    disp(output)
 end
 results
 
 poolobj = gcp('nocreate');
 delete(poolobj);
 
-S = 1;
-for i=1:maxthreads
-    %pick best result
-    S = results(i,:);
+% find the best result
+bestS = results(1,:);
+minError = GoalFunction(results(1,:));
+for i=2:maxthreads
+    error = GoalFunction(results(i,:));
+    if ( error < minError )
+        minError = errorl
+        bestS = results(i,:)
+    end
 end
 
-S
-S(9)
-%product
-% Index key for flows: 1-ethylene, 2-acetic acid, 3-water, 4-CH4, 5 - P, 6- T, 7-Tube #, 8-Volume cat max, 9 - ID
-[Fva, F, Fr, F0, Vcat, L, A,vo, n]=SteadyState(S);
+%S = bestS;
+%bestS = [0.8000    0.1040         0    0.0100    0.1947    0.4498    2.7990    0.0190    0.0000];
+fileID = fopen('output.txt','w');
+fprintf(fileID, '%d %d %d %d %d %d %d %d %d', bestS);
 
-spec
-cost
-%%%==============================================================
-% Remainder takes outputs of SteadyState using inputs determined by fmincon
-% and displays them
-
-%generates a matrix of molecular masses; required for matrix math
-MMM = ones(size(F,1),10);
-for n=1:size(F,1)
-    MMM(n,:)=MM;
-end
-
-%calculate the recycle flows in lb/hr
-Recycle=Fr/453.59237.*MM*3600;
-
-%Calculate fresh flows in lb/hr
-Fresh = F0/453.59237.*MM*3600;
-
-%Total allowable amount of VAM in vaporizer
-Fppm =(sum(Recycle)+sum(Fresh))*0.0001/0.9999;
-
-% Convert gmol/s flow to lb/hr flow
-Flb = F(:,1:10)/453.59237.*MMM*3600;
-Outputlbs=Flb(end,1:10)
-F(end,1:10);
-% Find %error in VAM production
-error= (Fva-product)/product*100;
-
-% flow of VAM in lb/s
-Fva; 
-MMM = ones(size(F,1),10);
-for n=1:size(F,1)
-       MMM(n,:)=MM;
-end
-
-%Raw material costs
-Flb = F(:,1:10)/453.59237.*MMM*3600;
-Fton1 = Fresh(:,1:10)*24*350*0.0005;
-Fton2 = Flb(end,6)*24*350*0.0005;
-Fprice1 = Fton1(1,1)*1300+Fton1(1,2)*200;
-Fprice2 = Fton2*1400*Recovery;
-Fprice3 = Fton1(1,3)*850;
-
-
-% percent CH4 of inflow to reactor
-percentCH4=Flb(1,5)/sum(Flb(1,:))*100;
-
-% percent of inerts in reactor output
-percentinerts=sum(Flb(end,8:10))/sum(Flb(end,:))*100;
-
-
-VolumeCatalyst=Vcat(end); %total volume of catalyst
-L; %end length of reactor
-O2fin = Flb(end,2); %final O2 amount
-FeedtoRecycle=sum(F0)/sum(Fr)*100;
-vo;
-dP=F(1,11)-F(end,11);
-dPcalc = 0.25*vo^2*L;
-Ntubes=S(7);
-
-Flbplot= [Flb(1,1:4) Flb(1,8:10)];
-
-Larray=Vcat./28.31/A;
-
-
-%%%==============================================================
-% Remainder takes outputs and presents it as a table and a series of graphs
-
-convC2H4= (F(1,1)-F(end,1))/F(1,1)*100;
-convO2= (F(1,2)-F(end,2))/F(1,2)*100;
-convAA= (F(1,3)-F(end,3))/F(1,3)*100;
-
-f = figure('Position',[440 500 800 120]);
-
-% create the data
-d = [Fva error dP dPcalc percentCH4 percentinerts FeedtoRecycle VolumeCatalyst L vo Ntubes convC2H4 convO2 convAA];
-
-% Create the column and row names in cell arrays 
-cnames = {'VAM outflow','Error','dP','dPcacl','%CH4','%inerts','%Feed/Recycle', 'VolCat', 'Length','velocity','#tubes', 'convC2H4', 'convO2','convAA'};
-
-% Create the uitable
-t = uitable(f,'Data',d,...
-            'ColumnName',cnames);
-
-% Set width and height
-t.Position(3) = t.Extent(3);
-t.Position(4) = t.Extent(4);
-
-figure
-subplot(2,2,1)
-    plot(Vcat, Flb(:,1:7))
-    title('Process Flows')
-    legend('ethylene','O2','AA','H20','CH4','VAM','CO2')
-    xlabel('Volume of Cat (L)')
-    ylabel('Flow Rate (lb/hr)')
-subplot(2,2,2)
-    plot(Vcat, Flb(:,8:10))
-    title('Inert Flows')
-    legend('ethane','Ar','N2')
-    xlabel('Volume of Cat (L)')
-    ylabel('Flow Rate (lb/hr)')
-subplot(2,2,3)
-    plot(Larray,F(:,11))
-    title('Pressure profile')
-    xlabel('Length of Reactor (ft)')
-    ylabel('Pressure psia')
-subplot(2,2,4)
-    bar(Flbplot)
-    title('Components of Feed')
-    xlabel('Feed component')
-    ylabel('lb/hr')
-Costcheck = 0;
-Costcheck = Fprice2-Fprice1-Fprice3
-
-Vamproduced= Fva*Recovery*453.59*3600*24*350/1000000
+% S(9)
+% %product
+% % Index key for flows: 1-ethylene, 2-acetic acid, 3-water, 4-CH4, 5 - P, 6- T, 7-Tube #, 8-Volume cat max, 9 - ID
+% [Fva, F, Fr, F0, Vcat, L, A,vo, n]=SteadyState(S);
 % 
-% Titles={'Stream', 'ethylene', 'oxygen', 'acetic acid', 'water', 'CH4', 'VAM','CO2', 'Ethane','Argon','N2'};
-% sheet= 1;
-% filename= 'Reactor.xlsx';
-% TitleRange='B2';
+% %%%==============================================================
+% % Remainder takes outputs of SteadyState using inputs determined by fmincon
+% % and displays them
 % 
-% xlswrite(filename,Titles,sheet,TitleRange)
+% %generates a matrix of molecular masses; required for matrix math
+% MMM = ones(size(F,1),10);
+% for n=1:size(F,1)
+%     MMM(n,:)=MM;
+% end
 % 
+% %calculate the recycle flows in lb/hr
+% Recycle=Fr/453.59237.*MM*3600;
+% 
+% %Calculate fresh flows in lb/hr
+% Fresh = F0/453.59237.*MM*3600;
+% 
+% %Total allowable amount of VAM in vaporizer
+% Fppm =(sum(Recycle)+sum(Fresh))*0.0001/0.9999;
+% 
+% % Convert gmol/s flow to lb/hr flow
+% Flb = F(:,1:10)/453.59237.*MMM*3600;
+% Outputlbs=Flb(end,1:10)
+% F(end,1:10);
+% % Find %error in VAM production
+% error= (Fva-product)/product*100;
+% 
+% % flow of VAM in lb/s
+% Fva; 
+% MMM = ones(size(F,1),10);
+% for n=1:size(F,1)
+%        MMM(n,:)=MM;
+% end
+% 
+% %Raw material costs
+% Flb = F(:,1:10)/453.59237.*MMM*3600;
+% Fton1 = Fresh(:,1:10)*24*350*0.0005;
+% Fton2 = Flb(end,6)*24*350*0.0005;
+% Fprice1 = Fton1(1,1)*1300+Fton1(1,2)*200;
+% Fprice2 = Fton2*1400*Recovery;
+% Fprice3 = Fton1(1,3)*850;
+% 
+% 
+% % percent CH4 of inflow to reactor
+% percentCH4=Flb(1,5)/sum(Flb(1,:))*100;
+% 
+% % percent of inerts in reactor output
+% percentinerts=sum(Flb(end,8:10))/sum(Flb(end,:))*100;
+% 
+% 
+% VolumeCatalyst=Vcat(end); %total volume of catalyst
+% L; %end length of reactor
+% O2fin = Flb(end,2); %final O2 amount
+% FeedtoRecycle=sum(F0)/sum(Fr)*100;
+% vo;
+% dP=F(1,11)-F(end,11);
+% dPcalc = 0.25*vo^2*L;
+% Ntubes=S(7);
+% 
+% Flbplot= [Flb(1,1:4) Flb(1,8:10)];
+% 
+% Larray=Vcat./28.31/A;
+% 
+% 
+% %%%==============================================================
+% % Remainder takes outputs and presents it as a table and a series of graphs
+% 
+% convC2H4= (F(1,1)-F(end,1))/F(1,1)*100;
+% convO2= (F(1,2)-F(end,2))/F(1,2)*100;
+% convAA= (F(1,3)-F(end,3))/F(1,3)*100;
+% 
+% f = figure('Position',[440 500 800 120]);
+% 
+% % create the data
+% d = [Fva error dP dPcalc percentCH4 percentinerts FeedtoRecycle VolumeCatalyst L vo Ntubes convC2H4 convO2 convAA];
+% 
+% % Create the column and row names in cell arrays 
+% cnames = {'VAM outflow','Error','dP','dPcacl','%CH4','%inerts','%Feed/Recycle', 'VolCat', 'Length','velocity','#tubes', 'convC2H4', 'convO2','convAA'};
+% 
+% % Create the uitable
+% t = uitable(f,'Data',d,...
+%             'ColumnName',cnames);
+% 
+% % Set width and height
+% t.Position(3) = t.Extent(3);
+% t.Position(4) = t.Extent(4);
+% 
+% figure
+% subplot(2,2,1)
+%     plot(Vcat, Flb(:,1:7))
+%     title('Process Flows')
+%     legend('ethylene','O2','AA','H20','CH4','VAM','CO2')
+%     xlabel('Volume of Cat (L)')
+%     ylabel('Flow Rate (lb/hr)')
+% subplot(2,2,2)
+%     plot(Vcat, Flb(:,8:10))
+%     title('Inert Flows')
+%     legend('ethane','Ar','N2')
+%     xlabel('Volume of Cat (L)')
+%     ylabel('Flow Rate (lb/hr)')
+% subplot(2,2,3)
+%     plot(Larray,F(:,11))
+%     title('Pressure profile')
+%     xlabel('Length of Reactor (ft)')
+%     ylabel('Pressure psia')
+% subplot(2,2,4)
+%     bar(Flbplot)
+%     title('Components of Feed')
+%     xlabel('Feed component')
+%     ylabel('lb/hr')
+% Costcheck = 0;
+% Costcheck = Fprice2-Fprice1-Fprice3
+% 
+% Vamproduced= Fva*Recovery*453.59*3600*24*350/1000000
+% % 
+% % Titles={'Stream', 'ethylene', 'oxygen', 'acetic acid', 'water', 'CH4', 'VAM','CO2', 'Ethane','Argon','N2'};
+% % sheet= 1;
+% % filename= 'Reactor.xlsx';
+% % TitleRange='B2';
+% % 
+% % xlswrite(filename,Titles,sheet,TitleRange)
+% % 
 
 end
