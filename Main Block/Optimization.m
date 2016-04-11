@@ -19,9 +19,9 @@ Purgemax = 0.05;
 
 %start up fresh feed ranges, in mol/s
 C2H4min=1;
-C2H4max = 1500;
+C2H4max = 2500;
 AAmin =1;
-AAmax =1000;
+AAmax =5000;
 H2Omin = 0;
 H2Omax = 0;
 CH4min = 1;
@@ -29,12 +29,20 @@ CH4max = 800;
 
 % 1-ethylene, 2-acetic acid, 3-water, 4-CH4, 5 - P, 6- T, 7 -
 % Tube #, 8-Volume cat max, 9 - ID
-LB = [C2H4min AAmin H2Omin CH4min  Pmin Tmin Tubemin Lengthmin Purgemin];
-UB = [C2H4max AAmax H2Omax CH4max Pmax Tmax Tubemax Lengthmax Purgemax];
+LBa = zeros(2,9)
+LBa(1,:) =  [C2H4min AAmin H2Omin CH4min Pmin Tmin Tubemin Lengthmin Purgemin];
+LBa(2,:) =  [C2H4min 100 H2Omin CH4min Pmin Tmin Tubemin Lengthmin Purgemin];
+
+UBa = zeros(2,9)
+UBa(1,:) = [C2H4max 100 H2Omax CH4max Pmax Tmax Tubemax Lengthmax Purgemax];
+UBa(2,:) = [C2H4max 200 H2Omax CH4max Pmax Tmax Tubemax Lengthmax Purgemax];
+
+%LB = [C2H4min AAmin H2Omin CH4min Pmin Tmin Tubemin Lengthmin Purgemin];
+%UB = [C2H4max AAmax H2Omax CH4max Pmax Tmax Tubemax Lengthmax Purgemax];
 
 Recovery = 0.95; %estimated recovery of vinyl acetate
 O2conversion = 90;
-AAconversion = 90;
+AAconversion = 30;
 
 
 % desired vam in lb per second = yearlytarget * tons/gram / days/year / hours/day /
@@ -55,7 +63,7 @@ cost = 0;
         % conversions for cost check
         MMM = ones(size(F,1),10);
             for n=1:size(F,1)
-            MMM(n,:)=MM;
+                MMM(n,:)=MM;
             end
         Flb = F(:,1:10)/453.59237.*MMM*3600;
         Fresh = F0/453.59237.*MM*3600;
@@ -67,7 +75,7 @@ cost = 0;
         Costcheck = Fprice2-Fprice1-Fprice3;
         
         %Limit O2 conversion 
-        convO2= (F(1,2)-F(end,2))/F(1,2)*100;
+        convO2= (F(1,2)-F(end,2)) / F(1,2)*100;
         O2check = (convO2-O2conversion)^2;
         
         %Limit AA conversion
@@ -83,9 +91,16 @@ cost = 0;
         error = spec+cost+O2check+AAcheck;
     end
 
+parpool
 
-S = fmincon(@(x) goal(x),[1 1 0 1 Pmin Tmin 4000 20 0.005],[],[],[],[],LB,UB);
+ff = @goal;
+results = zeros(1,2)
+parfor i=1:2
+    results(i) = fmincon(ff,[1200 200 0 50 Pmin Tmin 4000 20 0.005],[],[],[],[],LBa(i,:),UBa(i,:));
+    %S = fmincon(@(x) goal(x),[1200 200 0 50 Pmin Tmin 4000 20 0.005],[],[],[],[],LB,UB);
+end
 
+results
 S
 S(9)
 %product
