@@ -30,9 +30,6 @@ CH4max = 800;
 % 1-ethylene, 2-acetic acid, 3-water, 4-CH4, 5 - P, 6- T, 7 -
 % Tube #, 8-Volume cat max, 9 - ID
 
-LB = [C2H4min AAmin H2Omin CH4min Pmin Tmin Tubemin Lengthmin Purgemin];
-UB = [C2H4max AAmax H2Omax CH4max Pmax Tmax Tubemax Lengthmax Purgemax];
-
 Recovery = 0.95; %estimated recovery of vinyl acetate
 O2conversion = 90;
 AAconversion = 30;
@@ -45,13 +42,7 @@ product = 300000*1000000/350/24/3600/453.59/Recovery
 % density=[0.650502,0.725865,1.73532,0.435758,0.3637,2.48941,1.01799,0.702875,0.905922,0.633822];
 MM=[28.0532,31.9988,60.052,18.0153, 16.04, 86.0892,44.0095,30.069,39.948,28.0134];
 
-%New optimization function that currently takes into account desired VAM
-Fprice1 = zeros(1,10);
-Fprice2 = zeros(1,10);
-Costcheck = 0;
-spec=0;
-cost = 0;
-    function error = goal(x)
+function error = GoalFunction(x)
         [Fva, F, Fr, F0, Vcat, L, A,vo]=SteadyState(x);
         % conversions for cost check
         MMM = ones(size(F,1),10);
@@ -82,10 +73,33 @@ cost = 0;
         %maximize cost
         cost = ((4.2E8-Costcheck)/1E9)^2;
         error = spec+cost+O2check+AAcheck;
-    end
+end
 
+maxthreads = 2;
+parpool(maxthreads)
 
-S = fmincon(@(x) goal(x),[1200 200 0 50 Pmin Tmin 4000 20 0.005],[],[],[],[],LB,UB);
+results = zeros(maxthreads, 9);
+handle = @GoalFunction;
+
+AAmin = 0;
+AAmax = 200;
+parfor i=1:maxthreads
+    aamin = AAmin + i * AAmax / maxthreads
+    aamax = AAmin + (i + 1) * AAmax / maxthreads
+    LB = [C2H4min aamin H2Omin CH4min Pmin Tmin Tubemin Lengthmin Purgemin];
+    UB = [C2H4max aamax H2Omax CH4max Pmax Tmax Tubemax Lengthmax Purgemax];
+    results(i,:) = fmincon(handle,[1200 200 0 50 Pmin Tmin 4000 20 0.005],[],[],[],[],LB,UB);
+end
+results
+
+poolobj = gcp('nocreate');
+delete(poolobj);
+
+S = 1;
+for i=1:maxthreads
+    %pick best result
+    S = results(i,:);
+end
 
 S
 S(9)
