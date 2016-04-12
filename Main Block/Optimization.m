@@ -75,7 +75,7 @@ function error = GoalFunction(x)
         error = spec+cost+O2check+AAcheck;
 end
 
-maxthreads = 20;
+maxthreads = 2;
 sections = 100
 results = zeros(sections, 9);
 handle = @GoalFunction;
@@ -89,9 +89,10 @@ parfor i=1:sections
     aamax = AAmin + (i) * step
     LB = [C2H4min aamin H2Omin CH4min Pmin Tmin Tubemin Lengthmin Purgemin];
     UB = [C2H4max aamax H2Omax CH4max Pmax Tmax Tubemax Lengthmax Purgemax];
-    %results(i,:) = fmincon(handle,[1200 200 0 50 Pmin Tmin 4000 20 0.005],[],[],[],[],LB,UB);
-    results(i,:) = [0.8000    0.1040         0    0.0100    0.1947    0.4498    2.7990    0.0190    0.0000];
-    output = sprintf('range %d is finished %d-%d' , i , aamin, aamax)
+    options = optimoptions('fmincon','Display','none','Algorithm','sqp');
+    results(i,:) = fmincon(handle,[1200 200 0 50 Pmin Tmin 4000 20 0.005],[],[],[],[],LB,UB,[],options);
+    %results(i,:) = [0.8000    0.1040         0    0.0100    0.1947    0.4498    2.7990    0.0190    0.0000];
+    output = sprintf('ransge %d is finished %d-%d' , i , aamin, aamax)
     disp(output)
 end
 results
