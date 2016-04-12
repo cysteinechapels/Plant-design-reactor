@@ -18,7 +18,7 @@ safety= 0.8;
 %Approximated water recovery from the purification section
 waterfactor = 0.14;
 %Selected purge percent
-purge=0.01;
+purge=0.005;
 %Approximated acetic acid recovery from the purification section
 recoveryAA=0.99;
 

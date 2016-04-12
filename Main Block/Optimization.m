@@ -14,8 +14,8 @@ Tubemin = 1000; %minimum number of tubes
 Tubemax = 7000; %maximum number of tubes
 Lengthmin = 0; %minimum length
 Lengthmax = 20; %maximum length
-Purgemin = 0;
-Purgemax = 0.05;
+Purgemin = 0.001;
+Purgemax = 0.01;
 
 %start up fresh feed ranges, in mol/s
 C2H4min=800;
@@ -30,8 +30,8 @@ CH4max = 800;
 % 1-ethylene, 2-acetic acid, 3-water, 4-CH4, 5 - P, 6- T, 7 -
 % Tube #, 8-Volume cat max, 9 - ID
 
-LB = [C2H4min AAmin H2Omin CH4min Pmin Tmin Tubemin Lengthmin Purgemin];
-UB = [C2H4max AAmax H2Omax CH4max Pmax Tmax Tubemax Lengthmax Purgemax];
+LB = [C2H4min AAmin H2Omin CH4min Pmin Tmin Tubemin Lengthmin ];
+UB = [C2H4max AAmax H2Omax CH4max Pmax Tmax Tubemax Lengthmax ];
 
 Recovery = 0.95; %estimated recovery of vinyl acetate
 O2conversion = 90;
@@ -51,6 +51,7 @@ Fprice2 = zeros(1,10);
 Costcheck = 0;
 spec=0;
 cost = 0;
+
     function error = goal(x)
         [Fva, F, Fr, F0, Vcat, L, A,vo]=SteadyState(x);
         % conversions for cost check
@@ -85,16 +86,16 @@ cost = 0;
     end
 
 
-S = fmincon(@(x) goal(x),[1200 200 0 50 Pmin Tmin 4000 20 0.005],[],[],[],[],LB,UB);
+S = fmincon(@(x) goal(x),[1200 400 0 20 Pmin Tmin 7000 20 ],[],[],[],[],LB,UB);
 
 S
-S(9)
 %product
 % Index key for flows: 1-ethylene, 2-acetic acid, 3-water, 4-CH4, 5 - P, 6- T, 7-Tube #, 8-Volume cat max, 9 - ID
 [Fva, F, Fr, F0, Vcat, L, A,vo, n]=SteadyState(S);
 
 spec
 cost
+
 %%%==============================================================
 % Remainder takes outputs of SteadyState using inputs determined by fmincon
 % and displays them
@@ -119,7 +120,7 @@ Flb = F(:,1:10)/453.59237.*MMM*3600;
 Outputlbs=Flb(end,1:10)
 F(end,1:10);
 % Find %error in VAM production
-error= (Fva-product)/product*100;
+error1= (Fva-product)/product*100;
 
 % flow of VAM in lb/s
 Fva; 
@@ -168,7 +169,7 @@ convAA= (F(1,3)-F(end,3))/F(1,3)*100;
 f = figure('Position',[440 500 800 120]);
 
 % create the data
-d = [Fva error dP dPcalc percentCH4 percentinerts FeedtoRecycle VolumeCatalyst L vo Ntubes convC2H4 convO2 convAA];
+d = [Fva error1 dP dPcalc percentCH4 percentinerts FeedtoRecycle VolumeCatalyst L vo Ntubes convC2H4 convO2 convAA];
 
 % Create the column and row names in cell arrays 
 cnames = {'VAM outflow','Error','dP','dPcacl','%CH4','%inerts','%Feed/Recycle', 'VolCat', 'Length','velocity','#tubes', 'convC2H4', 'convO2','convAA'};
@@ -206,8 +207,15 @@ subplot(2,2,4)
     ylabel('lb/hr')
 Costcheck = 0;
 Costcheck = Fprice2-Fprice1-Fprice3
+% AAcheck = (convAA-AAconversion)^2;
+% O2check = (convO2-O2conversion)^2;
+% cost = ((4.2E8-Costcheck)/1E9)^2;
+% spec = (product - Fva)^2;
+% error2 = spec+cost+O2check+AAcheck
 
 Vamproduced= Fva*Recovery*453.59*3600*24*350/1000000
+
+
 % 
 % Titles={'Stream', 'ethylene', 'oxygen', 'acetic acid', 'water', 'CH4', 'VAM','CO2', 'Ethane','Argon','N2'};
 % sheet= 1;
